@@ -358,10 +358,6 @@ def mine_hard_negatives(
     if num_negatives < 1:
         raise ValueError(f"num_negatives must be at least 1, got num_negatives={num_negatives}.")
 
-    rescore = cross_encoder is not None and (
-        absolute_margin is not None or relative_margin is not None or max_score is not None or min_score is not None
-    )
-
     faiss_cap_note = ""
     if range_max is None:
         if (
@@ -593,7 +589,9 @@ def mine_hard_negatives(
     del corpus_embeddings
 
     # Rescore with cross_encoder
-    if rescore:
+    if cross_encoder is not None and (
+        absolute_margin is not None or relative_margin is not None or max_score is not None or min_score is not None
+    ):
         if use_multi_process:
             pool = cross_encoder.start_multi_process_pool(
                 target_devices=None if isinstance(use_multi_process, bool) else use_multi_process
