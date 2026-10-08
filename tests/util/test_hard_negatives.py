@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import os
+import random
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
@@ -297,6 +298,25 @@ def test_cross_encoder_rescores_with_only_min_score(
     expected_negative = cross_encoder.predict(list(zip(result["query"], result["negative"])))
     assert [pos for pos, _ in reported] == pytest.approx(expected_positive.tolist(), rel=1e-4, abs=1e-4)
     assert [neg for _, neg in reported] == pytest.approx(expected_negative.tolist(), rel=1e-4, abs=1e-4)
+
+
+def test_min_score_preserves_random_candidate_pool(
+    dataset: Dataset, static_retrieval_mrl_en_v1_model: SentenceTransformer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    results = []
+    for min_score in (None, -1.0):
+        monkeypatch.setattr(random, "sample", random.Random(0).sample)
+        results.append(
+            mine_hard_negatives(
+                dataset=dataset,
+                model=static_retrieval_mrl_en_v1_model,
+                min_score=min_score,
+                sampling_strategy="random",
+                verbose=False,
+            )
+        )
+
+    assert results[0].to_dict() == results[1].to_dict()
 
 
 def test_range_parameters(dataset: Dataset, static_retrieval_mrl_en_v1_model: SentenceTransformer) -> None:
